@@ -60,25 +60,7 @@ class Number:
             for number in self.reverse:
                 result.append(int(number))
             result.reverse()
-            plus = True
-            counter = 0
-            for number in result:
-                if plus:
-                    if number == 0:
-                        result[counter] += 1
-                        break
-                    elif number == 1:
-                        result[counter] -= 1
-                        counter += 1
-                        if len(result) < counter:
-                            result[counter] += 1
-                            plus = False
-                else:
-                    if number == 2:
-                        result[counter] -= 2
-                        counter += 1
-                        if len(result) < counter:
-                            result[counter] += 1
+            result = add_func(result)
             result.reverse()
             self.additional = ""
             for number in result:
@@ -103,6 +85,38 @@ class Number:
                 self.straight += "1"
 
 
+def add_func(result):
+    plus = True
+    counter = 0
+    for number in result:
+        if plus:
+            if number == 0:
+                result[counter] += 1
+                break
+            elif number == 1:
+                result[counter] -= 1
+                counter += 1
+                if len(result) < counter:
+                    result[counter] += 1
+                    plus = False
+        else:
+            if number == 2:
+                result[counter] -= 2
+                counter += 1
+                if len(result) < counter:
+                    result[counter] += 1
+    return result
+
+
+def comparison(tick_of_bits, bit_size, number, result):
+    if tick_of_bits < bit_size:
+        return result.zfill(bit_size)
+    if number < 0:
+        return str(1) + result[1:]
+    else:
+        return str(0) + result[1:]
+
+
 def decimal_to_binary_straight(number):
     binary = result = ""
     tick_of_actions = tick_of_bits = 0
@@ -122,13 +136,7 @@ def decimal_to_binary_straight(number):
         clone_of_num /= 2
         tick_of_actions = tick_of_actions + 1
         result = binary[::-1]
-    if tick_of_bits < bit_size:
-        result = result.zfill(bit_size)
-    if number < 0:
-        result = str(1) + result[1:]
-    else:
-        result = str(0) + result[1:]
-    return result
+    return comparison(tick_of_bits, bit_size, number, result)
 
 
 def add_two_binary_numbers(first_number, second_number, max_size, negative_exist):
@@ -159,25 +167,7 @@ def additional_to_straight(binary, is_negative_number):
             straight += "1"
     abs_binary = [int(number) for number in straight[1:]]
     abs_binary.reverse()
-    plus = True
-    counter = 0
-    for number in abs_binary:
-        if plus:
-            if number == 0:
-                abs_binary[counter] += 1
-                break
-            elif number == 1:
-                abs_binary[counter] -= 1
-                counter += 1
-                if len(abs_binary) < counter:
-                    abs_binary[counter] += 1
-                    plus = False
-        else:
-            if number == 2:
-                abs_binary[counter] -= 2
-                counter += 1
-                if len(abs_binary) < counter:
-                    abs_binary[counter] += 1
+    abs_binary = add_func(abs_binary)
     abs_binary.reverse()
     straight = straight[0]
     for number in abs_binary:
@@ -187,25 +177,10 @@ def additional_to_straight(binary, is_negative_number):
 
 def binary_to_decimal(binary):
     decimal = i = 0
-    found = None
-    binary_number = ""
     is_negative_number = False if binary[0] == "0" else True
-    abs_binary = binary[1:]
-    for number in abs_binary:
-        if found is None:
-            if number == "1":
-                binary_number += number
-                found = True
-                continue
-            else:
-                continue
-        else:
-            binary_number += number
-    if binary_number:
-        binary_number = int(binary_number)
-    else:
-        decimal = 0
-        return decimal
+    binary_number = get_binary_int(binary)
+    if binary_number == 0:
+        return binary_number
     while binary_number != 0:
         dec = binary_number % 10
         decimal = decimal + dec * pow(2, i)
@@ -258,15 +233,19 @@ def binary_product(first, second):
     return binary_prod
 
 
-def multiplication_two_binary_numbers(first_number, second_number, max_size):
+def identify_sign(first_number, second_number):
     if first_number[0] == "1" and second_number[0] == "1":
-        multiplication = "0"
+        return "0"
     elif first_number[0] == "1" and second_number[0] == "0":
-        multiplication = "1"
+        return "1"
     elif first_number[0] == "0" and second_number[0] == "1":
-        multiplication = "1"
+        return "1"
     else:
-        multiplication = "0"
+        return "0"
+
+
+def multiplication_two_binary_numbers(first_number, second_number, max_size):
+    multiplication_sign = identify_sign(first_number, second_number)
     binary_multiply = 0
     factor = 1
     first_binary = get_binary_int(first_number)
@@ -282,7 +261,7 @@ def multiplication_two_binary_numbers(first_number, second_number, max_size):
         factor = 10
     binary_multiply = str(binary_multiply)
     binary_multiply = binary_multiply.zfill(max_size - 1)
-    binary_multiply = multiplication + str(binary_multiply)
+    binary_multiply = multiplication_sign + str(binary_multiply)
     return binary_multiply
 
 
@@ -311,16 +290,14 @@ def subtraction(first_number, second_number):
 
 def division_two_binary_numbers(first_number, second_number, max_size):
     result = carry = ""
-    sign_first_number = first_number[0]
-    sign_second_number = second_number[0]
-    first_number = first_number[1:].lstrip("0")
-    second_number = second_number[1:].lstrip("0")
-    for i in range(0, len(first_number)):
-        carry += first_number[i]
-        if int(second_number) > int(carry):
+    first_number_without_sign = first_number[1:].lstrip("0")
+    second_number_without_sign = second_number[1:].lstrip("0")
+    for i in range(0, len(first_number_without_sign)):
+        carry += first_number_without_sign[i]
+        if int(second_number_without_sign) > int(carry):
             result += "0"
         else:
-            surplus = subtraction(carry, second_number)
+            surplus = subtraction(carry, second_number_without_sign)
             if surplus == 0:
                 carry = ""
                 result += "1"
@@ -329,16 +306,10 @@ def division_two_binary_numbers(first_number, second_number, max_size):
                 result += "1"
                 carry = surplus
     result = result.zfill(max_size - 1)
-    if sign_first_number == "1" and sign_second_number == "1":
-        result = "0" + result
-    elif sign_first_number == "0" and sign_second_number == "0":
-        result = "0" + result
-    else:
-        result = "1" + result
-    return result
+    return identify_sign(first_number, second_number) + result
 
 
-def add_two_float_numbers(first_number, second_number):
+def identify_exp(first_number, second_number):
     first_number_search = first_number.find("1", 0, first_number.find("."))
     second_number_search = second_number.find("1", 0, second_number.find("."))
     if first_number.find("1", 0, first_number.find(".")) == -1:
@@ -349,15 +320,20 @@ def add_two_float_numbers(first_number, second_number):
         second_exp = 0
     else:
         second_exp = second_number.find(".") - second_number_search - 1
+    return first_exp, second_exp
+
+
+def add_two_float_numbers(first_number, second_number):
+    first_exp, second_exp = identify_exp(first_number, second_number)
     if first_exp >= second_exp:
         diff_exp = first_exp - second_exp
         second_float = "0" * diff_exp + second_number[:(second_number.find("."))] + \
-                      second_number[(second_number.find(".") + 1):(len(second_number) - diff_exp)]
+                       second_number[(second_number.find(".") + 1):(len(second_number) - diff_exp)]
         first_float = first_number[:(first_number.find("."))] + first_number[(first_number.find(".") + 1):]
     else:
         diff_exp = second_exp - first_exp
         first_float = "0" * diff_exp + first_number[:(first_number.find("."))] + \
-                     first_number[(first_number.find(".") + 1):(len(first_number) - diff_exp)]
+                      first_number[(first_number.find(".") + 1):(len(first_number) - diff_exp)]
         second_float = second_number[:(second_number.find("."))] + second_number[(second_number.find(".") + 1):]
     sum = add_two_binary_numbers(first_float, second_float, len(first_float), False)
     need_to_add = len(sum) - len(second_float)
