@@ -116,8 +116,7 @@ def binary_for_sknf_and_sdnf(table):
         if table[index][3] == 0:
             sknf_string += str(table[index][0]) + str(table[index][1]) + str(table[index][2]) + " "
         else:
-            sdnf_string += str(abs(table[index][0] - 1)) + str(abs(table[index][1] - 1)) \
-                           + str(abs(table[index][2] - 1)) + " "
+            sdnf_string += str(table[index][0]) + str(table[index][1]) + str(table[index][2]) + " "
     print("\nBinary (СДНФ):", sdnf_string)
     print("Binary (СКНФ):", sknf_string)
     return sknf_string, sdnf_string
@@ -147,7 +146,7 @@ def decimal_for_sknf_and_sdnf(sdnf, sknf):
 
 
 def main():
-    # formula = "(!((a+!c)*(!(b*c))))"
+    # formula = "(!((!a+c)*(!(b*!c))))"
     formula = input("Enter the formula: ")
     table = generate_table()
     table = result(table, formula)
