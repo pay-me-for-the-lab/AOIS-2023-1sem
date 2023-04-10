@@ -136,13 +136,13 @@ def replace_arguments_pcnf(partial_formula, current_implicat_index, full_formula
     return partial_formula, values_of_arguments
 
 
-def remove_implications(formula, form_type):
+def remove_implications(formula, form):
     formula_after_removed_implicats = []
     if len(formula) == 1 or len(formula[0]) == 1:
         return formula
     for i in range(len(formula)):
         temp_formula = deepcopy(formula)
-        if form_type == 'pdnf':
+        if form == 'pdnf':
             temp_formula, values_of_arguments = replace_arguments_pdnf(temp_formula, i, formula)
         else:
             temp_formula, values_of_arguments = replace_arguments_pcnf(temp_formula, i, formula)
@@ -150,7 +150,7 @@ def remove_implications(formula, form_type):
             for k in range(len(temp_formula[j])):
                 if temp_formula[j][k] in values_of_arguments:
                     temp_formula[j][k] = values_of_arguments[temp_formula[j][k]]
-        if check_for_cut_back_arguments(temp_formula, form_type):
+        if check_for_cut_back_arguments(temp_formula, form):
             formula_after_removed_implicats.append(formula[i])
     return formula_after_removed_implicats
 
@@ -192,23 +192,23 @@ def check_for_extra_implicants_pcnf(cut_back_formula):
     return any(i[0] != '!' and '!' + i in cut_back_formula for i in cut_back_formula)
 
 
-def check_for_cut_back_arguments(temp_formula, form_of_formula):
-    formula_after_open_staples = [logical_and(j[0], *j[1:]) if form_of_formula == 'pdnf'
-                                  else logical_or(j[0], *j[1:]) for j in temp_formula if not ''.join(j).isdigit()]
-    return [] if (form_of_formula == 'pdnf' and check_for_extra_implicants_pdnf(formula_after_open_staples)) or \
-                 (form_of_formula != 'pdnf' and check_for_extra_implicants_pcnf(formula_after_open_staples)) \
+def check_for_cut_back_arguments(formula, form):
+    formula_after_open_staples = [logical_and(j[0], *j[1:]) if form == 'pdnf'
+                                  else logical_or(j[0], *j[1:]) for j in formula if not ''.join(j).isdigit()]
+    return [] if (form == 'pdnf' and check_for_extra_implicants_pdnf(formula_after_open_staples)) or \
+                 (form != 'pdnf' and check_for_extra_implicants_pcnf(formula_after_open_staples)) \
         else True
 
 
-def logical_and(first_argument, second_argument):
-    if first_argument == second_argument:
-        return first_argument
-    elif first_argument.isdigit() and second_argument.isdigit():
-        return str(int(first_argument) and int(second_argument))
-    elif first_argument[0] == 'x' or first_argument[0] == '!':
-        return first_argument if second_argument == '1' else '0'
+def logical_and(arg1, arg2):
+    if arg1 == arg2:
+        return arg1
+    elif arg1.isdigit() and arg2.isdigit():
+        return str(int(arg1) and int(arg2))
+    elif arg1[0] == 'x' or arg1[0] == '!':
+        return arg1 if arg2 == '1' else '0'
     else:
-        return second_argument if first_argument == '1' else '0'
+        return arg2 if arg1 == '1' else '0'
 
 
 def calculate_formula(formula):
@@ -237,10 +237,10 @@ def check_implicant_size(implicants):
     return all(len(implicant) == len(implicants[0]) for implicant in implicants) if implicants else False
 
 
-def combine_implicants(implicants, form_of_implicants):
+def combine_implicants(implicants, form):
     implicants_after_glue, difference, append_later, used_implicants = [], [], [], []
     if not check_implicant_size(implicants) or len(implicants) == 1:
-        return implicants, implicants, form_of_implicants
+        return implicants, implicants, form
     for i in range(0, len(implicants) - 1):
         implicant_size = len(implicants_after_glue)
         for k in range(i + 1, len(implicants)):
@@ -255,28 +255,28 @@ def combine_implicants(implicants, form_of_implicants):
         if len(implicants_after_glue) == implicant_size and implicants[i] not in used_implicants:
             append_later.append(implicants[i])
     if len(implicants_after_glue) == 0:
-        return implicants, implicants, form_of_implicants
+        return implicants, implicants, form
     else:
         implicants_after_glue = append_later + implicants_after_glue + \
                                 ([implicants[-1]] if implicants[-1] not in used_implicants else [])
-    return implicants_after_glue, implicants, form_of_implicants
+    return implicants_after_glue, implicants, form
 
 
-def glue_common_literals(first_implicant, second_implicant):
-    return [first_implicant[i] for i in range(len(first_implicant)) if first_implicant[i] == second_implicant[i]]
+def glue_common_literals(imp1, imp2):
+    return [imp1[i] for i in range(len(imp1)) if imp1[i] == imp2[i]]
 
 
-def logical_or(first_argument, second_argument):
-    if first_argument.isdigit() and second_argument.isdigit():
-        return str(int(first_argument) or int(second_argument))
-    if '1' in [first_argument, second_argument]:
+def logical_or(arg1, arg2):
+    if arg1.isdigit() and arg2.isdigit():
+        return str(int(arg1) or int(arg2))
+    if '1' in [arg1, arg2]:
         return '1'
-    if first_argument[0] in 'x!' and second_argument == '1':
+    if arg1[0] in 'x!' and arg2 == '1':
         return '1'
-    return first_argument if first_argument == second_argument else second_argument
+    return arg1 if arg1 == arg2 else arg2
 
 
-def generate_pcnf_pdnf(formula, form_of_formula):
+def generate_pcnf_pdnf(formula, form):
     output_formula = []
     if isinstance(formula, str):
         print(formula)
@@ -285,12 +285,12 @@ def generate_pcnf_pdnf(formula, form_of_formula):
         output_formula.append('(')
     for i in formula:
         if len(i) == 1:
-            if form_of_formula == 'pdnf':
+            if form == 'pdnf':
                 implicat = f'{" * ".join(i)}+'
             else:
                 implicat = f'{" + ".join(i)}*'
         else:
-            if form_of_formula == 'pdnf':
+            if form == 'pdnf':
                 implicat = f'({" * ".join(i)})+'
             else:
                 implicat = f'({" + ".join(i)})*'
@@ -527,26 +527,26 @@ def check_four_group(table, current_row, current_column, form):
     return elements_in_group
 
 
-def find_four_square_elements(table_data, current_row, current_column, form_of_formula):
+def find_four_square_elements(table, current_row, current_column, form):
     elements_in_group = []
-    if table_data[current_row][current_column][1] == form_of_formula:
+    if table[current_row][current_column][1] == form:
         if current_row == 0:
-            if current_column != len(table_data[current_row]) - 1:
-                if table_data[current_row][current_column + 1][1] == form_of_formula \
-                        and table_data[current_row + 1][current_column][1] == form_of_formula \
-                        and table_data[current_row + 1][current_column + 1][1] == form_of_formula:
-                    elements_in_group.append((table_data[current_row][current_column],
-                                              table_data[current_row][current_column + 1],
-                                              table_data[current_row + 1][current_column],
-                                              table_data[current_row + 1][current_column + 1]))
+            if current_column != len(table[current_row]) - 1:
+                if table[current_row][current_column + 1][1] == form \
+                        and table[current_row + 1][current_column][1] == form \
+                        and table[current_row + 1][current_column + 1][1] == form:
+                    elements_in_group.append((table[current_row][current_column],
+                                              table[current_row][current_column + 1],
+                                              table[current_row + 1][current_column],
+                                              table[current_row + 1][current_column + 1]))
             else:
-                if table_data[current_row][0][1] == form_of_formula \
-                        and table_data[current_row + 1][current_column][1] == form_of_formula \
-                        and table_data[current_row + 1][0][1] == form_of_formula:
-                    elements_in_group.append((table_data[current_row][current_column],
-                                              table_data[current_row + 1][current_column],
-                                              table_data[current_row][0],
-                                              table_data[current_row + 1][0]))
+                if table[current_row][0][1] == form \
+                        and table[current_row + 1][current_column][1] == form \
+                        and table[current_row + 1][0][1] == form:
+                    elements_in_group.append((table[current_row][current_column],
+                                              table[current_row + 1][current_column],
+                                              table[current_row][0],
+                                              table[current_row + 1][0]))
     return elements_in_group
 
 
@@ -564,10 +564,10 @@ def check_all_elements_in_group(table, form):
     return all(j[1] == form for i in table for j in i)
 
 
-def generate_formula(group_of_arguments, form):
+def generate_formula(args, form):
     create_implicat = []
     data_about_argument = dict()
-    for i in group_of_arguments:
+    for i in args:
         for j in i:
             data_about_argument = generate_implicants(data_about_argument, j)
             if form == 'pdnf':
