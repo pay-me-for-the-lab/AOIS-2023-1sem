@@ -59,18 +59,34 @@ def answer(table, formula):
     return table
 
 
+def evaluate_or(processed_formula):
+    if processed_formula[0] == "0" and processed_formula[3] == "0":
+        return "0"
+    else:
+        return "1"
+
+
+def evaluate_and(processed_formula):
+    if processed_formula[0] == "1" and processed_formula[4] == "1":
+        return "1"
+    else:
+        return "0"
+
+
+def evaluate_formula(processed_formula):
+    if "or" in processed_formula:
+        return evaluate_or(processed_formula)
+    elif "and" in processed_formula:
+        return evaluate_and(processed_formula)
+
+
 def formula_calculate(formula):
-    formula = formula[1:len(formula) - 1]
-    if "or" in formula:
-        if formula[0] == "0" and formula[3] == "0":
-            return "0"
-        else:
-            return "1"
-    elif "and" in formula:
-        if formula[0] == "1" and formula[4] == "1":
-            return "1"
-        else:
-            return "0"
+    processed_formula = process_formula(formula)
+    return evaluate_formula(processed_formula)
+
+
+def process_formula(formula):
+    return formula[1:len(formula) - 1]
 
 
 def formula_answer(formula):
@@ -112,6 +128,7 @@ def show_pdnf_and_pcnf(table):
 
 
 #              №1 METHOD
+
 
 def logical_and(arg1, arg2):
     if arg1 == arg2:
@@ -324,13 +341,22 @@ def connect_implicants(formula):
     return combine_implicants(clear_formula, form)
 
 
+def combine_terms(expression_terms):
+    result = ''
+    for term in expression_terms:
+        result = logical_or(term, result)
+    return result
+
+
+def is_temp_expression_one(expression_terms):
+    temp_expression = combine_terms(expression_terms)
+    return temp_expression == '1'
+
+
 def check_for_extra_implicants_pdnf(expression_terms):
-    temp_expression = ''
     if has_extra_implicants(expression_terms):
         return True
-    for term in expression_terms:
-        temp_expression = logical_or(term, temp_expression)
-    if temp_expression == '1':
+    if is_temp_expression_one(expression_terms):
         return True
     return False
 
@@ -348,6 +374,7 @@ def check_for_cut_back_arguments(formula, form):
 
 
 #              №2 METHOD
+
 
 def delete_row(table):
     for i in table:
@@ -390,22 +417,36 @@ def tabular_calculation_method(glued_formula, default_formula, form):
     return generate_implicant_table(glued_formula, default_formula)
 
 
-def generate_implicant_table(glued_formula, default_formula):
+def add_rows_to_table(table, glued_formula, table_data):
+    for row in zip(glued_formula, table_data):
+        table.add_row([row[0], *row[1]])
+
+
+def remove_row_by_index(glued_formula, table_data, index_of_delete_row):
+    del glued_formula[index_of_delete_row]
+    del table_data[index_of_delete_row]
+
+
+def create_table_data(glued_formula, default_formula):
     table = PrettyTable()
     table.field_names = ['  ', *default_formula]
     table_data = [[all([k in j for k in i]) * '+' for j in default_formula] for i in glued_formula]
-    for row in zip(glued_formula, table_data):
-        table.add_row([row[0], *row[1]])
+    return table, table_data
+
+
+def generate_implicant_table(glued_formula, default_formula):
+    table, table_data = create_table_data(glued_formula, default_formula)
+    add_rows_to_table(table, glued_formula, table_data)
     print(table)
     index_of_delete_row = delete_row(table_data)
     while index_of_delete_row is not None:
-        del glued_formula[index_of_delete_row]
-        del table_data[index_of_delete_row]
+        remove_row_by_index(glued_formula, table_data, index_of_delete_row)
         index_of_delete_row = delete_row(table_data)
     return glued_formula
 
 
 #              №3 METHOD
+
 
 def is_four_square_group(table, cur_row, cur_col, form):
     if cur_row == 0:
@@ -638,7 +679,7 @@ def generate_implicants(data, cur_elem):
     return data
 
 
-def generate_formula(args, form):
+def generate_implicants_list(args, form):
     answer = []
     data_about_argument = dict()
     for i in args:
@@ -648,10 +689,20 @@ def generate_formula(args, form):
                 answer.append(['!' * (x[1][1] == 0) + x[0] for x in data_about_argument.items() if x[1][0]])
             elif form == 'pcnf':
                 answer.append(['!' * (x[1][1] == 1) + x[0] for x in data_about_argument.items() if x[1][0]])
+    return answer
+
+
+def remove_duplicates(answer):
     temp_create_implicat = deepcopy(answer)
     for i in temp_create_implicat:
         if answer.count(i) > 1:
             answer.remove(i)
+    return answer
+
+
+def generate_formula(args, form):
+    answer = generate_implicants_list(args, form)
+    answer = remove_duplicates(answer)
     return answer
 
 
