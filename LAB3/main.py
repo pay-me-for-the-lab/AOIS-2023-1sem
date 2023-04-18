@@ -60,24 +60,24 @@ def answer(table, formula):
 
 
 def evaluate_or(processed_formula):
-    if processed_formula[0] == "0" and processed_formula[3] == "0":
+    if processed_formula[3] == "0" and processed_formula[0] == "0":
         return "0"
     else:
         return "1"
 
 
 def evaluate_and(processed_formula):
-    if processed_formula[0] == "1" and processed_formula[4] == "1":
+    if processed_formula[4] == "1" and processed_formula[0] == "1":
         return "1"
     else:
         return "0"
 
 
 def evaluate_formula(processed_formula):
-    if "or" in processed_formula:
-        return evaluate_or(processed_formula)
-    elif "and" in processed_formula:
+    if "and" in processed_formula:
         return evaluate_and(processed_formula)
+    elif "or" in processed_formula:
+        return evaluate_or(processed_formula)
 
 
 def formula_calculate(formula):
@@ -86,7 +86,7 @@ def formula_calculate(formula):
 
 
 def process_formula(formula):
-    return formula[1:len(formula) - 1]
+    return formula[1:-1]
 
 
 def formula_answer(formula):
@@ -430,7 +430,14 @@ def remove_row_by_index(glued_formula, table_data, index_of_delete_row):
 def create_table_data(glued_formula, default_formula):
     table = PrettyTable()
     table.field_names = ['  ', *default_formula]
-    table_data = [[all([k in j for k in i]) * '+' for j in default_formula] for i in glued_formula]
+    table_data = []
+    for glued_item in glued_formula:
+        row_data = []
+        for default_item in default_formula:
+            match = all([k in default_item for k in glued_item])
+            symbol = '+' if match else ''
+            row_data.append(symbol)
+        table_data.append(row_data)
     return table, table_data
 
 
@@ -681,14 +688,26 @@ def generate_implicants(data, cur_elem):
 
 def generate_implicants_list(args, form):
     answer = []
-    data_about_argument = dict()
-    for i in args:
-        for j in i:
-            data_about_argument = generate_implicants(data_about_argument, j)
+    data_about_argument = {}
+    for first in args:
+        for second in first:
+            data_about_argument = generate_implicants(data_about_argument, second)
             if form == 'pdnf':
-                answer.append(['!' * (x[1][1] == 0) + x[0] for x in data_about_argument.items() if x[1][0]])
-            elif form == 'pcnf':
-                answer.append(['!' * (x[1][1] == 1) + x[0] for x in data_about_argument.items() if x[1][0]])
+                implicants = []
+                for x in data_about_argument.items():
+                    if x[1][0]:
+                        negation = '!' * (x[1][1] == 0)
+                        implicant = negation + x[0]
+                        implicants.append(implicant)
+                answer.append(implicants)
+            else:
+                implicants = []
+                for x in data_about_argument.items():
+                    if x[1][0]:
+                        negation = '!' * (x[1][1] == 1)
+                        implicant = negation + x[0]
+                        implicants.append(implicant)
+                answer.append(implicants)
     return answer
 
 
