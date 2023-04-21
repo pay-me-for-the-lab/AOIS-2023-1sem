@@ -267,25 +267,30 @@ def logical_or(arg1, arg2):
     return arg1 if arg1 == arg2 else arg2
 
 
-def generate_pcnf_pdnf(formula, form):
-    answer = []
+def handle_str_input(formula):
     if isinstance(formula, str):
         print(formula)
         return '0'
+    return None
+
+
+def generate_implicat(i, form):
+    if len(i) == 1:
+        implicat = i[0] + ('+' if form == 'pdnf' else '*')
+    else:
+        sep = '*' if form == 'pdnf' else '+'
+        implicat = f'({sep.join(i)}){"+" if form == "pdnf" else "*"}'
+    implicat = implicat.replace(' ', '')
+    return implicat
+
+
+def generate_pcnf_pdnf(formula, form):
+    answer = []
+    handle_str_input(formula)
     if len(formula[0]) == 1:
         answer.append('(')
     for i in formula:
-        if len(i) == 1:
-            if form == 'pdnf':
-                implicat = f'{" * ".join(i)}+'
-            else:
-                implicat = f'{" + ".join(i)}*'
-        else:
-            if form == 'pdnf':
-                implicat = f'({" * ".join(i)})+'
-            else:
-                implicat = f'({" + ".join(i)})*'
-        implicat = implicat.replace(' ', '')
+        implicat = generate_implicat(i, form)
         answer.append(implicat)
     if len(formula[0]) == 1:
         answer[-1] = answer[-1][:-1] + ')'
@@ -316,23 +321,36 @@ def update_argument_values_pdnf(argument_values, partial_formula, formula, curre
     return argument_values, partial_formula
 
 
+def _replace_arguments_in_formula(temp_formula, argument_values):
+    for j in range(len(temp_formula)):
+        for k in range(len(temp_formula[j])):
+            if temp_formula[j][k] in argument_values:
+                temp_formula[j][k] = argument_values[temp_formula[j][k]]
+    return temp_formula
+
+
 def remove_implications(formula, form):
     answer = []
-    if len(formula) == 1 or len(formula[0]) == 1:
+    if _is_simple_formula(formula):
         return formula
     for i in range(len(formula)):
         temp_formula = deepcopy(formula)
-        if form == 'pdnf':
-            temp_formula, argument_values = replace_arguments_pdnf(temp_formula, i, formula)
-        else:
-            temp_formula, argument_values = replace_arguments_pcnf(temp_formula, i, formula)
-        for j in range(len(temp_formula)):
-            for k in range(len(temp_formula[j])):
-                if temp_formula[j][k] in argument_values:
-                    temp_formula[j][k] = argument_values[temp_formula[j][k]]
+        temp_formula, argument_values = _replace_arguments(temp_formula, i, formula, form)
+        temp_formula = _replace_arguments_in_formula(temp_formula, argument_values)
         if check_for_cut_back_arguments(temp_formula, form):
             answer.append(formula[i])
     return answer
+
+
+def _replace_arguments(formula, index, original_formula, form):
+    if form == 'pdnf':
+        return replace_arguments_pdnf(formula, index, original_formula)
+    else:
+        return replace_arguments_pcnf(formula, index, original_formula)
+
+
+def _is_simple_formula(formula):
+    return len(formula) == 1 or len(formula[0]) == 1
 
 
 def connect_implicants(formula):
@@ -567,19 +585,36 @@ def get_adjacent_vertical_cells_matching_value(table, cur_row, cur_col, form):
     return answer
 
 
-def get_adjacent_horizontal_cells_matching_value(table, current_row, current_column, form):
+def get_adjacent_horizontal_cells_matching_value(table, cur_row, cur_col, form):
     answer = []
-    if table[current_row][current_column][1] == form:
-        if current_column != len(table[current_row]) - 1:
-            if table[current_row][current_column + 1][1] == form:
-                answer.append(table[current_row][current_column + 1])
-        elif table[current_row][0][1] == form:
-            answer.append(table[current_row][0])
-        if current_column != 0:
-            if table[current_row][current_column - 1][1] == form:
-                answer.append(table[current_row][current_column - 1])
-        elif table[current_row][len(table[current_row]) - 1][1] == form:
-            answer.append(table[current_row][len(table[current_row]) - 1])
+    if table[cur_row][cur_col][1] == form:
+        answer += get_matching_cell_on_right(table, cur_row, cur_col, form)
+        answer += get_matching_cell_on_left(table, cur_row, cur_col, form)
+    return answer
+
+
+def get_matching_cell_on_right(table, cur_row, cur_col, form):
+    answer = []
+    if cur_col != len(table[cur_row]) - 1:
+        answer = _get_matching_cell(table, cur_row, cur_col + 1, form)
+    elif table[cur_row][0][1] == form:
+        answer = [table[cur_row][0]]
+    return answer
+
+
+def _get_matching_cell(table, row, column, form):
+    answer = []
+    if table[row][column][1] == form:
+        answer.append(table[row][column])
+    return answer
+
+
+def get_matching_cell_on_left(table, cur_row, cur_col, form):
+    answer = []
+    if cur_col != 0:
+        answer = _get_matching_cell(table, cur_row, cur_col - 1, form)
+    elif table[cur_row][len(table[cur_row]) - 1][1] == form:
+        answer = [table[cur_row][len(table[cur_row]) - 1]]
     return answer
 
 
@@ -725,21 +760,21 @@ def generate_formula(args, form):
     return answer
 
 
-def check_group_adjacency(table, current_row, current_column, form):
+def check_group_adjacency(table, cur_row, cur_col, form):
     up_side = down_side = left_side = right_side = False
-    if table[current_row][current_column][1] == form:
-        last_column = len(table[current_row]) - 1
-        if current_column != 0 and table[current_row][current_column - 1][1] != form or \
-                current_column == 0 and table[current_row][last_column][1] != form:
+    if table[cur_row][cur_col][1] == form:
+        last_column = len(table[cur_row]) - 1
+        if cur_col != 0 and table[cur_row][cur_col - 1][1] != form or \
+                cur_col == 0 and table[cur_row][last_column][1] != form:
             left_side = True
-        if current_column != last_column and table[current_row][current_column + 1][1] != form or \
-                current_column == last_column and table[current_row][0][1] != form:
+        if cur_col != last_column and table[cur_row][cur_col + 1][1] != form or \
+                cur_col == last_column and table[cur_row][0][1] != form:
             right_side = True
-        if current_row != 0 and table[current_row - 1][current_column][1] != form or \
-                current_row == 0:
+        if cur_row != 0 and table[cur_row - 1][cur_col][1] != form or \
+                cur_row == 0:
             up_side = True
-        if current_row != len(table) - 1 and table[current_row + 1][current_column][1] != form or \
-                current_row == len(table) - 1:
+        if cur_row != len(table) - 1 and table[cur_row + 1][cur_col][1] != form or \
+                cur_row == len(table) - 1:
             down_side = True
     return up_side, down_side, left_side, right_side
 
