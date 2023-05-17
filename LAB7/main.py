@@ -43,7 +43,7 @@ def find_less(arr, attribute):
             arr_less.append(arr[i])
         g, l = 0, 0
     if len(arr_less) == 0:
-        return [0] * word_len
+        return "не найдено"
     curr_biggest = arr_less[0]
     for i in range(len(arr_less)):
         g, l = 0, 0
@@ -62,7 +62,7 @@ def find_more(arr, attribute):
             arr_more.append(arr[i])
         g, l = 0, 0
     if len(arr_more) == 0:
-        return [0] * word_len
+        return "не найдено"
     curr_biggest = arr_more[0]
     for i in range(len(arr_more)):
         g, l = 0, 0
@@ -73,6 +73,8 @@ def find_more(arr, attribute):
 
 
 def binary_to_decimal(binary_list):
+    if binary_list == "не найдено":
+        return
     binary_list.reverse()
     decimal = 0
     for digit in binary_list:
