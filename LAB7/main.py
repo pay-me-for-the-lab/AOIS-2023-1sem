@@ -34,59 +34,66 @@ def calculate_l(g, a, l, s):
         return l
 
 
-def find_less(words, choosen):
+def find_less(arr, attribute):
     g, l = 0, 0
-    words_less = []
-    for i in range(len(words)):
-        g, l = find(words[i], choosen, g, l, word_len - 1)
+    arr_less = []
+    for i in range(len(arr)):
+        g, l = find(arr[i], attribute, g, l, word_len - 1)
         if g == 0 and l == 1:
-            words_less.append(words[i])
+            arr_less.append(arr[i])
         g, l = 0, 0
-    if len(words_less) == 0:
+    if len(arr_less) == 0:
         return [0] * word_len
-    curr_biggest = words_less[0]
-    for i in range(len(words_less)):
+    curr_biggest = arr_less[0]
+    for i in range(len(arr_less)):
         g, l = 0, 0
-        g, l = find(words_less[i], curr_biggest, g, l, word_len - 1)
+        g, l = find(arr_less[i], curr_biggest, g, l, word_len - 1)
         if g == 1 and l == 0:
-            curr_biggest = words_less[i]
+            curr_biggest = arr_less[i]
     return curr_biggest
 
 
-def find_more(words, choosen):
+def find_more(arr, attribute):
     g, l = 0, 0
-    words_less = []
-    for i in range(len(words)):
-        g, l = find(words[i], choosen, g, l, word_len - 1)
+    arr_more = []
+    for i in range(len(arr)):
+        g, l = find(arr[i], attribute, g, l, word_len - 1)
         if g == 1 and l == 0:
-            words_less.append(words[i])
+            arr_more.append(arr[i])
         g, l = 0, 0
-    if len(words_less) == 0:
+    if len(arr_more) == 0:
         return [0] * word_len
-    curr_biggest = words_less[0]
-    for i in range(len(words_less)):
+    curr_biggest = arr_more[0]
+    for i in range(len(arr_more)):
         g, l = 0, 0
-        g, l = find(words_less[i], curr_biggest, g, l, word_len - 1)
+        g, l = find(arr_more[i], curr_biggest, g, l, word_len - 1)
         if g == 0 and l == 1:
-            curr_biggest = words_less[i]
+            curr_biggest = arr_more[i]
     return curr_biggest
 
 
-def find_interval(words, top, bottom):
+def binary_to_decimal(binary_list):
+    decimal = 0
+    for bit in binary_list:
+        decimal = (decimal << 1) | bit
+    return decimal
+
+
+def find_interval(arr, top, bottom):
     interval = []
-    out_of_interval = find_out_of_interval(words, top, bottom)
-    for i in range(len(words)):
+    out_of_interval = find_out_of_interval(arr, top, bottom)
+    for i in range(len(arr)):
         if not out_of_interval[i]:
-            interval.append(words[i])
+            interval.append(arr[i])
     return interval
 
 
-def find_out_of_interval(words, top, bottom):
+def find_out_of_interval(arr, top, bottom):
     g_top, l_top, g_bottom, l_bottom = 0, 0, 0, 0
-    out_of_interval = [False] * len(words)
-    for i in range(len(words)):
-        g_bottom, l_bottom = find(words[i], top, g_top, l_top, word_len - 1)
-        g_top, l_top = find(words[i], bottom, g_top, l_top, word_len - 1)
+    out_of_interval = [False] * len(arr)
+    for i in range(len(arr)):
+        g_bottom, l_bottom = find(arr[i], top, g_top, l_top, word_len - 1)
+        g_top, l_top = find(arr[i], bottom, g_top, l_top, word_len - 1)
         if g_top == 0 and l_top == 1:
             out_of_interval[i] = True
         if g_bottom == 1 and l_bottom == 0:
@@ -96,22 +103,24 @@ def find_out_of_interval(words, top, bottom):
 
 
 def main():
+    random.seed(13)
     words = words_wordsay()
     print("\nСловарь:")
     for i in range(len(words)):
-        print(words[i])
-    choosen = words[5]
+        print(str(words[i]) + " -> " + str(binary_to_decimal(words[i])))
+    choosen = words[6]
     start = words[2]
     end = words[9]
     print("\nПоиск ближайшего сверху и снизу значения:")
-    print("Выбранное слово", choosen)
-    print("Снизу", find_less(words, choosen))
-    print("Сверху", find_more(words, choosen))
-    print("\nИнтервал:\nОт", start, "\nДо", end)
+    print("Выбранное слово", str(choosen) + " -> " + str(binary_to_decimal(choosen)))
+    print("Снизу", str(find_less(words, choosen)) + " -> " + str(binary_to_decimal(find_less(words, choosen))))
+    print("Сверху", str(find_more(words, choosen)) + " -> " + str(binary_to_decimal(find_more(words, choosen))))
+    print("\nИнтервал:\nОт", str(start) + " -> " + str(binary_to_decimal(start)) + "\nДо", str(end) + " -> "
+          + str(binary_to_decimal(end)))
     print("\nНайденные слова на интервале:")
     interval = find_interval(words, start, end)
     for i in range(len(interval)):
-        print(interval[i])
+        print(str(interval[i]) + " -> " + str(binary_to_decimal(interval[i])))
 
 
 if __name__ == "__main__":
