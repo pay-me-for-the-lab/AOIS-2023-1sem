@@ -73,9 +73,11 @@ def find_more(arr, attribute):
 
 
 def binary_to_decimal(binary_list):
+    binary_list.reverse()
     decimal = 0
-    for bit in binary_list:
-        decimal = (decimal << 1) | bit
+    for digit in binary_list:
+        decimal = decimal * 2 + digit
+    binary_list.reverse()
     return decimal
 
 
@@ -109,7 +111,7 @@ def main():
     for i in range(len(words)):
         print(str(words[i]) + " -> " + str(binary_to_decimal(words[i])))
     choosen = words[6]
-    start = words[2]
+    start = words[4]
     end = words[9]
     print("\nПоиск ближайшего сверху и снизу значения:")
     print("Выбранное слово", str(choosen) + " -> " + str(binary_to_decimal(choosen)))
@@ -118,7 +120,7 @@ def main():
     print("\nИнтервал:\nОт", str(start) + " -> " + str(binary_to_decimal(start)) + "\nДо", str(end) + " -> "
           + str(binary_to_decimal(end)))
     print("\nНайденные слова на интервале:")
-    interval = find_interval(words, start, end)
+    interval = find_interval(words, end, start)
     for i in range(len(interval)):
         print(str(interval[i]) + " -> " + str(binary_to_decimal(interval[i])))
 
